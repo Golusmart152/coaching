@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Institute Management System</title>
+
+    <!-- External Libraries from CDN -->
+    <!-- React, ReactDOM, and Babel -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- jsPDF and html2canvas for PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.14/jspdf.plugin.autotable.min.js"></script>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Firebase -->
+    <script type="module" src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js"></script>
+    <script type="module" src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js"></script>
+    <script type="module" src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js"></script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            border: 1px solid #d1d5db;
+            transition: all 0.2s ease-in-out;
+        }
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5);
+        }
+        .student-table-header th {
+            padding: 0.75rem;
+            background-color: #1f2937;
+            color: #f9fafb;
+            text-align: left;
+            border-bottom: 2px solid #6b7280;
+        }
+        .student-table-row td {
+            padding: 0.75rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div id="root"></div>
+    <div id="messageBox" class="fixed bottom-4 right-4 bg-gray-800 text-white px-4 py-3 rounded-lg shadow-xl hidden z-50 transition-all duration-300"></div>
+
+    <!-- The main React application code -->
+    <script type="text/babel" src="src/constants/constants.js"></script>
+    <script type="text/babel" src="src/hooks/useLocalStorage.js"></script>
+    <script type="text/babel" src="src/services/dataService.js"></script>
+    <script type="text/babel" src="src/components/ui/PageContainer.js"></script>
+    <script type="text/babel" src="src/components/ui/Table.js"></script>
+    <script type="text/babel" src="src/components/ui/NavButton.js"></script>
+    <script type="text/babel" src="src/components/LoginPage.js"></script>
+    <script type="text/babel" src="src/components/Dashboard.js"></script>
+    <script type="text/babel" src="src/components/StudentsPage.js"></script>
+    <script type="text/babel" src="src/components/CoursesPage.js"></script>
+    <script type="text/babel" src="src/components/FeesPage.js"></script>
+    <script type="text/babel" src="src/components/ExamsPage.js"></script>
+    <script type="text/babel" src="src/components/ReportsPage.js"></script>
+    <script type="text/babel" src="src/components/EnquiriesPage.js"></script>
+    <script type="text/babel" src="src/components/SalaryPage.js"></script>
+    <script type="text/babel" src="src/components/EmployeePage.js"></script>
+    <script type="text/babel" src="src/components/CertificatesPage.js"></script>
+    <script type="text/babel" src="src/components/InstituteDetailsPage.js"></script>
+    <script type="text/babel" src="src/App.js"></script>
+    <script type="text/babel" src="src/main.js"></script>
+</body>
+</html>
