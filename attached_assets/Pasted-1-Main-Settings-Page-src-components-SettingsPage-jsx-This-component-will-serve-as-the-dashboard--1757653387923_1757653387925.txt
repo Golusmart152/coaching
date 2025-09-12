@@ -1,0 +1,91 @@
+1. Main Settings Page (src/components/SettingsPage.jsx)
+This component will serve as the dashboard for all administrative settings. It will render cards that link to its sub-components.
+
+2. User Management Page (src/components/UserManagementPage.jsx)
+This component will provide the interface for managing user roles and permissions.
+
+3. Appearance Settings (src/components/AppearanceSettingsPage.jsx)
+This component will provide UI customization options.
+
+4. Data Management Page (src/components/DataManagementPage.jsx)
+This component will handle data backups and the import feature.
+
+5. Institute Details Page (src/components/InstituteDetailsPage.jsx)
+This component is where you manage the institute's branding and contact information.
+The Main User Management Dashboard
+This module will live as a dedicated card within your main Settings page. Clicking on this card will take you to the primary user management dashboard, which serves as a central hub for all user-related tasks.
+
+The main view of this dashboard would be a table, providing a quick overview of all the users in your system. This table would display key information like the user's name, their assigned role (e.g., Super Admin, Admin, Teacher, Student), and their current status. From here, a Super Admin could perform essential, high-level actions:
+
+Creating a new user account with a specific role.
+
+Editing an existing user's details or role.
+
+Disabling a user's account to block access.
+
+Granular Permissions: A Two-Tiered System
+This is where the real power of the module lies. Clicking on a specific user from the main table will open a new view dedicated to managing their individual permissions. This is where you would implement your idea of giving both full-module access and granular control.
+
+For each module in your application (e.g., Students, Fees, Exams), there would be a dedicated section. Within this section, you would present a dropdown menu with two primary options for the user's access level:
+
+Full Access: This option grants the user all permissions within that specific module, providing a quick way to set up common roles.
+
+Custom: Selecting this option would reveal the granular controls, allowing you to fine-tune specific permissions.
+
+When Custom is selected, the UI would expand to show a detailed list of all the actions a user can take within that module. This is where your four-tiered access system comes to life. For each specific action, the user could choose from a new dropdown with your proposed options:
+
+View Only: The user can see the data but cannot make any changes. For example, a teacher could view student fee records but couldn't edit them.
+
+Edit Info: The user can view and modify existing data, such as a student's address or phone number.
+
+Delete Info: The user has full control, including the ability to permanently delete records. This option is typically reserved for Super Admins.
+
+Block: The user cannot see or access any part of this module or feature. This option effectively hides the module from their view.
+
+This design gives an admin a streamlined way to set up permissions for common roles, while still providing the flexibility and security of fine-grained control when needed. This is what truly separates a good application from a great one.
+The Teacher Management module would be a new card on your main dashboard. Clicking on this card would take you to a dedicated page with two primary views, consistent with the rest of your application's design:
+
+1. Teacher Master
+This page would display a clean, organized table of all your teaching staff.
+
+Data Source: The table would automatically filter your central employee data to show only those records with the "Teacher" role. This means you only have one place to update employee details, but a separate, uncluttered view for your academic staff.
+
+Key Information: Each row would display the teacher's name, contact information, and a summary of their assigned courses.
+
+New Teacher Workflow: An "Add New Teacher" button on this page would simply redirect the user to your main Employee Management form, where the role could be pre-selected as "Teacher."
+Integration with Other Modules
+A dedicated Teacher Management module would completely transform the functionality of your application, making it more interconnected and powerful.
+
+Exams & Results: With courses linked to teachers, a teacher could log in and be automatically filtered to only see and manage the exam results for their specific classes. This prevents them from seeing data they shouldn't.
+
+Teacher-Specific Dashboard: The application could have a unique dashboard just for teachers. Instead of a full admin view, it would show them a summary of their assigned courses, a list of their students, and a quick link to manage their class's exam results.
+
+Reports: You could add new report options. For example, a report that shows a teacher's performance over time or a list of all students assigned to a specific teacher.
+
+User Roles & Permissions: This module directly supports our plan for granular permissions. The Teacher role would be managed here, and you could easily set permissions in the Settings module that grant them View Only access to student data and Edit access to exam results for their courses.
+UI for Teacher Course Allotment
+The core of this feature will be a dedicated form within a teacher's profile. Instead of a simple drag-and-drop, this form will provide a clear and organized way to manage multiple course assignments.
+
+1. The Teacher Profile Page
+When an admin clicks on a teacher's name from the master list, a detailed profile page opens. This page would display the teacher's personal details, and a new section would be added: "Course Allotment."
+
+2. The Allotment Form
+This form would be simple, clean, and intuitive.
+
+Teacher Selection: The form would have a dropdown menu for "Teacher Name," pre-selected with the current teacher's name. This is a crucial starting point for the form.
+
+Multi-Select Course Field: This is the most important part of the UI. Instead of a single course dropdown, this field would allow an admin to select multiple courses for the teacher. A good UI for this would be a multi-select dropdown that shows all available courses. As the admin clicks on a course, it appears as a small, removable tag below the dropdown, making it clear which courses have been assigned.
+
+Save Changes Button: A single button to save all the course assignments for that teacher.
+
+3. Displaying Allotted Courses
+On the teacher's profile page, below the allotment form, there would be a clean, read-only list or table of the courses they are currently assigned. This provides an at-a-glance summary of their responsibilities.
+
+Key Logic and Functionality
+This new design directly addresses your points about changing and managing multiple courses.
+
+Changing an Assignment: To change a teacher's course, an admin would simply open this form, remove a course from the multi-select field, and add a new one. The "Save" button would overwrite the old list with the new one.
+
+Multiple Courses: The multi-select field is specifically designed to handle multiple inputs, making it easy to assign as many courses as needed to a single teacher.
+
+Teacher-Course Link: When the form is submitted, the application's data would be updated to reflect the new assignments. The teacher's record would now contain an array of the unique IDs of the courses they are assigned to. This is the data link that unlocks all the other powerful features we've discussed, such as a teacher-specific dashboard.

@@ -26,6 +26,61 @@ const App = () => {
     const [showNotifications, setShowNotifications] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
 
+    // Router functions
+    const parseRoute = () => {
+        const hash = window.location.hash.slice(1) || '/';
+        const [path, queryString] = hash.split('?');
+        const params = new URLSearchParams(queryString || '');
+        return { path, params };
+    };
+    
+    const navigateTo = (path, query = '') => {
+        const url = query ? `${path}?q=${encodeURIComponent(query)}` : path;
+        window.location.hash = url;
+    };
+    
+    const handleRouteChange = () => {
+        if (!isLoggedIn) return;
+        
+        const { path, params } = parseRoute();
+        const query = params.get('q') || '';
+        
+        switch(path) {
+            case '/search':
+                setPage('search');
+                setSearchQuery(query);
+                break;
+            case '/dashboard':
+                setPage('dashboard');
+                break;
+            default:
+                if (path.startsWith('/')) {
+                    const pageName = path.slice(1);
+                    if (pageMap[pageName]) {
+                        setPage(pageName);
+                    } else {
+                        setPage('dashboard');
+                        window.location.hash = '/dashboard';
+                    }
+                } else {
+                    setPage('dashboard');
+                    window.location.hash = '/dashboard';
+                }
+                break;
+        }
+    };
+    
+    // Initialize routing
+    useEffect(() => {
+        if (isLoggedIn) {
+            handleRouteChange();
+        } else {
+            setPage('dashboard');
+        }
+        window.addEventListener('hashchange', handleRouteChange);
+        return () => window.removeEventListener('hashchange', handleRouteChange);
+    }, [isLoggedIn]);
+
     const addNotification = (message) => {
         const newNotification = { id: crypto.randomUUID(), message, read: false, date: new Date().toISOString() };
         setNotifications(prev => [newNotification, ...prev]);
@@ -39,6 +94,22 @@ const App = () => {
         setUser(null);
         setIsLoggedIn(false);
         showMessage("You have been logged out.");
+        navigateTo('/');
+    };
+
+    // Page definitions for routing
+    const pageMap = {
+        'dashboard': { component: Dashboard, props: { setPage, students, courses, enquiries, employees, exams, fees }, roles: ['Admin', 'Teacher', 'Data Entry'] },
+        'students': { component: StudentsPage, props: { students, setStudents, courses, nextStudentId, setNextStudentId, showMessage }, roles: ['Admin', 'Teacher', 'Data Entry'] },
+        'courses': { component: CoursesPage, props: { courses, setCourses, showMessage }, roles: ['Admin', 'Teacher'] },
+        'fees': { component: FeesPage, props: { students, courses, fees, setFees, showMessage, instituteDetails }, roles: ['Admin'] },
+        'exams': { component: ExamsPage, props: { students, exams, setExams, results, setResults, nextExamId, setNextExamId, showMessage }, roles: ['Admin', 'Teacher'] },
+        'reports': { component: ReportsPage, props: { students, fees, results, courses, enquiries, employees, showMessage }, roles: ['Admin'] },
+        'enquiries': { component: EnquiriesPage, props: { courses, enquiries, setEnquiries, showMessage, addNotification }, roles: ['Admin', 'Data Entry'] },
+        'employees': { component: EmployeePage, props: { employees, setEmployees, salaries, setSalaries, instituteDetails, showMessage, PageContainer, Table }, roles: ['Admin'] },
+        'certificates': { component: CertificatesPage, props: {}, roles: ['Admin'] },
+        'instituteDetails': { component: InstituteDetailsPage, props: { instituteDetails, setInstituteDetails, showMessage }, roles: ['Admin'] },
+        'search': { component: SearchPage, props: { searchQuery, showMessage, navigateTo }, roles: ['Admin', 'Teacher', 'Data Entry'] },
     };
 
     // --- Component-agnostic functions ---
@@ -67,20 +138,6 @@ const App = () => {
     const userRole = user ? user.role : '';
 
     const accessDenied = <PageContainer title="Access Denied">You do not have permission to view this page.</PageContainer>;
-
-    const pageMap = {
-        'dashboard': { component: Dashboard, props: { setPage, students, courses, enquiries, employees, exams, fees }, roles: ['Admin', 'Teacher', 'Data Entry'] },
-        'students': { component: StudentsPage, props: { students, setStudents, courses, nextStudentId, setNextStudentId, showMessage }, roles: ['Admin', 'Teacher', 'Data Entry'] },
-        'courses': { component: CoursesPage, props: { courses, setCourses, showMessage }, roles: ['Admin', 'Teacher'] },
-        'fees': { component: FeesPage, props: { students, courses, fees, setFees, showMessage, instituteDetails }, roles: ['Admin'] },
-        'exams': { component: ExamsPage, props: { students, exams, setExams, results, setResults, nextExamId, setNextExamId, showMessage }, roles: ['Admin', 'Teacher'] },
-        'reports': { component: ReportsPage, props: { students, fees, results, courses, enquiries, employees, showMessage }, roles: ['Admin'] },
-        'enquiries': { component: EnquiriesPage, props: { courses, enquiries, setEnquiries, showMessage, addNotification }, roles: ['Admin', 'Data Entry'] },
-        'employees': { component: EmployeePage, props: { employees, setEmployees, salaries, setSalaries, instituteDetails, showMessage, PageContainer, Table }, roles: ['Admin'] },
-        'certificates': { component: CertificatesPage, props: {}, roles: ['Admin'] },
-        'instituteDetails': { component: InstituteDetailsPage, props: { instituteDetails, setInstituteDetails, showMessage }, roles: ['Admin'] },
-        'search': { component: SearchPage, props: { searchQuery, showMessage }, roles: ['Admin', 'Teacher', 'Data Entry'] },
-    };
 
     const currentPage = pageMap[page] || pageMap['dashboard'];
 
@@ -122,14 +179,14 @@ const App = () => {
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     onKeyPress={(e) => {
                                         if (e.key === 'Enter') {
-                                            setPage('search');
+                                            navigateTo('/search', searchQuery);
                                         }
                                     }}
                                     placeholder="Search students, employees, transactions..."
                                     className="w-full pl-4 pr-12 py-2 bg-gray-800 border border-gray-700 rounded-xl text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm"
                                 />
                                 <button
-                                    onClick={() => setPage('search')}
+                                    onClick={() => navigateTo('/search', searchQuery)}
                                     className="absolute right-2 top-1 bg-blue-600 text-white p-1.5 rounded-lg hover:bg-blue-700 transition duration-300 shadow-md"
                                 >
                                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -157,7 +214,7 @@ const App = () => {
                                 <p className="font-semibold">{user.firstName} {user.lastName}</p>
                                 <p className="text-sm text-gray-400">{user.role}</p>
                             </div>
-                            <button onClick={() => setPage('dashboard')} className="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 transition duration-300">
+                            <button onClick={() => navigateTo('/dashboard')} className="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 transition duration-300">
                                 Dashboard
                             </button>
                             <button onClick={handleLogout} className="bg-red-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-red-700 transition duration-300">
