@@ -1,6 +1,11 @@
-const SearchPage = ({ searchQuery, showMessage }) => {
+const SearchPage = ({ searchQuery, showMessage, navigateTo }) => {
     const { useState, useEffect } = React;
     const [query, setQuery] = useState(searchQuery || '');
+    
+    // Sync internal query state with prop changes (for URL navigation)
+    useEffect(() => {
+        setQuery(searchQuery || '');
+    }, [searchQuery]);
     const [filters, setFilters] = useState([]);
     const [results, setResults] = useState({});
     const [expandedSections, setExpandedSections] = useState({});
@@ -43,7 +48,9 @@ const SearchPage = ({ searchQuery, showMessage }) => {
 
     const handleSearch = (e) => {
         e.preventDefault();
-        // Search is handled by useEffect when query changes
+        if (query.trim()) {
+            navigateTo('/search', query);
+        }
     };
 
     const toggleFilter = (filterId) => {

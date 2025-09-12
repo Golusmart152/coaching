@@ -110,6 +110,7 @@ const App = () => {
         'certificates': { component: CertificatesPage, props: {}, roles: ['Admin'] },
         'instituteDetails': { component: InstituteDetailsPage, props: { instituteDetails, setInstituteDetails, showMessage }, roles: ['Admin'] },
         'search': { component: SearchPage, props: { searchQuery, showMessage, navigateTo }, roles: ['Admin', 'Teacher', 'Data Entry'] },
+        'settings': { component: SettingsPage, props: { navigateTo, showMessage }, roles: ['Admin'] },
     };
 
     // --- Component-agnostic functions ---
@@ -216,6 +217,9 @@ const App = () => {
                             </div>
                             <button onClick={() => navigateTo('/dashboard')} className="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 transition duration-300">
                                 Dashboard
+                            </button>
+                            <button onClick={() => navigateTo('/settings')} className="bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-gray-700 transition duration-300">
+                                ⚙️ Settings
                             </button>
                             <button onClick={handleLogout} className="bg-red-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-red-700 transition duration-300">
                                 Logout
