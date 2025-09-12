@@ -13,6 +13,14 @@ class MyHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         super().end_headers()
 
     def do_GET(self):
+        # Health endpoint for deployment health checks
+        if self.path in ['/api', '/health']:
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            self.wfile.write(b'{"status":"ok"}')
+            return
+            
         # For single-page applications, serve index.html for all non-file requests
         parsed_path = urlparse(self.path)
         file_path = parsed_path.path.lstrip('/')
@@ -23,9 +31,19 @@ class MyHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.path = '/index.html'
         
         super().do_GET()
+    
+    def do_HEAD(self):
+        # Health endpoint for deployment health checks (HEAD requests)
+        if self.path in ['/api', '/health']:
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            return
+            
+        super().do_HEAD()
 
 if __name__ == "__main__":
-    PORT = 5000
+    PORT = int(os.environ.get("PORT", 5000))
     HOST = "0.0.0.0"
     
     # Change to the directory containing our files
