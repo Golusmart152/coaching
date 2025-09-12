@@ -111,6 +111,7 @@ const App = () => {
         'instituteDetails': { component: InstituteDetailsPage, props: { instituteDetails, setInstituteDetails, showMessage }, roles: ['Admin'] },
         'search': { component: SearchPage, props: { searchQuery, showMessage, navigateTo }, roles: ['Admin', 'Teacher', 'Data Entry'] },
         'settings': { component: SettingsPage, props: { navigateTo, showMessage }, roles: ['Admin'] },
+        'user-management': { component: UserManagementPage, props: { employees, showMessage, navigateTo }, roles: ['Admin'] },
     };
 
     // --- Component-agnostic functions ---
