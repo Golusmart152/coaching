@@ -24,6 +24,7 @@ const App = () => {
     });
     const [notifications, setNotifications] = useLocalStorage('notifications', []);
     const [showNotifications, setShowNotifications] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
 
     const addNotification = (message) => {
         const newNotification = { id: crypto.randomUUID(), message, read: false, date: new Date().toISOString() };
@@ -78,6 +79,7 @@ const App = () => {
         'employees': { component: EmployeePage, props: { employees, setEmployees, salaries, setSalaries, instituteDetails, showMessage, PageContainer, Table }, roles: ['Admin'] },
         'certificates': { component: CertificatesPage, props: {}, roles: ['Admin'] },
         'instituteDetails': { component: InstituteDetailsPage, props: { instituteDetails, setInstituteDetails, showMessage }, roles: ['Admin'] },
+        'search': { component: SearchPage, props: { searchQuery, showMessage }, roles: ['Admin', 'Teacher', 'Data Entry'] },
     };
 
     const currentPage = pageMap[page] || pageMap['dashboard'];
@@ -108,9 +110,36 @@ const App = () => {
         <div className="bg-gray-100 min-h-screen font-sans">
             {isLoggedIn && (
                 <header className="bg-gray-900 text-white p-4 shadow-lg">
-                    <div className="container mx-auto max-w-7xl flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
+                    <div className="container mx-auto max-w-7xl flex flex-col lg:flex-row justify-between items-center space-y-4 lg:space-y-0">
                         <h1 className="text-2xl font-bold">Institute Admin Panel</h1>
-                        <nav className="flex flex-wrap items-center justify-center md:justify-end gap-4">
+                        
+                        {/* Search Bar */}
+                        <div className="flex-1 max-w-md mx-4">
+                            <div className="relative">
+                                <input
+                                    type="text"
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    onKeyPress={(e) => {
+                                        if (e.key === 'Enter') {
+                                            setPage('search');
+                                        }
+                                    }}
+                                    placeholder="Search students, employees, transactions..."
+                                    className="w-full pl-4 pr-12 py-2 bg-gray-800 border border-gray-700 rounded-xl text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm"
+                                />
+                                <button
+                                    onClick={() => setPage('search')}
+                                    className="absolute right-2 top-1 bg-blue-600 text-white p-1.5 rounded-lg hover:bg-blue-700 transition duration-300 shadow-md"
+                                >
+                                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <nav className="flex flex-wrap items-center justify-center lg:justify-end gap-4">
                              <div className="relative">
                                 <button onClick={() => setShowNotifications(!showNotifications)} className="relative z-10 block rounded-md bg-gray-800 p-2 focus:outline-none">
                                     <svg className="h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
