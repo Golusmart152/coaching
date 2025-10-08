@@ -1,4 +1,5 @@
-const Dashboard = ({ setPage, students, courses, enquiries, employees, exams, fees }) => {
+const Dashboard = ({ setPage }) => {
+    const { students, courses, enquiries, employees, exams, fees } = useData();
     const totalStudents = students.length;
     const totalCourses = courses.length;
     const totalEnquiries = enquiries.length;

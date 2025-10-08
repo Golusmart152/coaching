@@ -1,4 +1,4 @@
-const UserManagementPage = ({ employees, showMessage, navigateTo }) => {
+const UserManagementPage = ({ showMessage, navigateTo }) => {
     const { useState, useEffect } = React;
     
     // Available roles and modules for permissions

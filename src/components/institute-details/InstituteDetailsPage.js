@@ -1,5 +1,6 @@
-const InstituteDetailsPage = ({ instituteDetails, setInstituteDetails, showMessage }) => {
+const InstituteDetailsPage = ({ showMessage }) => {
     const { useState } = React;
+    const { instituteDetails, setInstituteDetails } = useData();
     const [detailsForm, setDetailsForm] = useState(instituteDetails);
 
     const handleChange = (e) => {
