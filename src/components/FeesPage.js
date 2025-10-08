@@ -1,5 +1,6 @@
-const FeesPage = ({ students, courses, fees, setFees, showMessage, instituteDetails }) => {
+const FeesPage = ({ showMessage }) => {
     const { useState } = React;
+    const { students, courses, fees, setFees, instituteDetails } = useData();
     const [view, setView] = useState('cards');
     const [formData, setFormData] = useState({
         studentId: '',

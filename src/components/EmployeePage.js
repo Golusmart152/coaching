@@ -1,5 +1,6 @@
-const EmployeePage = ({ employees, setEmployees, salaries, setSalaries, instituteDetails, showMessage, PageContainer, Table }) => {
+const EmployeePage = ({ showMessage, PageContainer, Table }) => {
     const { useState, useEffect } = React;
+    const { employees, setEmployees, salaries, setSalaries, instituteDetails } = useData();
     const [view, setView] = useState('cards');
     const [formData, setFormData] = useState({ firstName: '', lastName: '', email: '', phone: '', address: '', role: '', salary: '', password: '', bankDetails: { accountHolderName: '', bankName: '', accountNumber: '', ifscCode: '' } });
     const [editingId, setEditingId] = useState(null);

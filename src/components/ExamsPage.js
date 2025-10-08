@@ -1,5 +1,6 @@
-const ExamsPage = ({ students, exams, setExams, results, setResults, nextExamId, setNextExamId, showMessage }) => {
+const ExamsPage = ({ showMessage }) => {
     const { useState } = React;
+    const { students, exams, setExams, results, setResults, nextExamId, setNextExamId } = useData();
     const [view, setView] = useState('cards');
     const [formData, setFormData] = useState({
         subjectName: '',

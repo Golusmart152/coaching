@@ -2,4 +2,12 @@ const { createRoot } = ReactDOM;
 
 // Mount the app
 const root = createRoot(document.getElementById('root'));
-root.render(<App />);
+root.render(
+    <AuthProvider>
+        <NotificationProvider>
+            <DataProvider>
+                <App />
+            </DataProvider>
+        </NotificationProvider>
+    </AuthProvider>
+);

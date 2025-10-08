@@ -1,5 +1,6 @@
-const CoursesPage = ({ courses, setCourses, showMessage }) => {
+const CoursesPage = ({ showMessage }) => {
     const { useState } = React;
+    const { courses, setCourses } = useData();
     const [view, setView] = useState('cards');
     const [formData, setFormData] = useState({ name: '', description: '', durationValue: '', durationUnit: 'months', totalFee: '', numberOfLectures: '', numberOfHours: '' });
     const [editingId, setEditingId] = useState(null);
