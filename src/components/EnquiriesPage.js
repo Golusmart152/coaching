@@ -1,5 +1,7 @@
-const EnquiriesPage = ({ courses, enquiries, setEnquiries, showMessage, addNotification }) => {
+const EnquiriesPage = ({ showMessage }) => {
     const { useState } = React;
+    const { courses, enquiries, setEnquiries } = useData();
+    const { addNotification } = useNotifications();
     const [view, setView] = useState('cards');
     const [formData, setFormData] = useState({
         name: '',

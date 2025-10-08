@@ -1,5 +1,6 @@
-const StudentsPage = ({ students, setStudents, courses, nextStudentId, setNextStudentId, showMessage }) => {
+const StudentsPage = ({ showMessage }) => {
     const { useState, useEffect } = React;
+    const { students, setStudents, courses, nextStudentId, setNextStudentId } = useData();
     const [view, setView] = useState('cards');
     const [formData, setFormData] = useState({
         firstName: '',

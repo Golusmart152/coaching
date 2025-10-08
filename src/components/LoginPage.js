@@ -1,5 +1,7 @@
-const LoginPage = ({ setIsLoggedIn, setMode, showMessage, setUserId, employees, setUser }) => {
+const LoginPage = ({ setMode, showMessage }) => {
     const { useState } = React;
+    const { employees } = useData();
+    const { setIsLoggedIn, setUser } = useAuth();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
 

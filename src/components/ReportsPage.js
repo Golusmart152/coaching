@@ -1,5 +1,6 @@
-const ReportsPage = ({ students, fees, results, courses, enquiries, employees, showMessage }) => {
+const ReportsPage = ({ showMessage }) => {
     const { useState } = React;
+    const { students, fees, results, courses, enquiries, employees } = useData();
     const [reportType, setReportType] = useState('students');
 
     const generateCsv = (data, filename) => {
