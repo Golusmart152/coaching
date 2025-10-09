@@ -30,10 +30,10 @@ const DataProvider = ({ children }) => {
         }
     };
 
-    // Function to fetch all data from the database
+    // Function to fetch all data from the database using services
     const fetchData = useCallback(async () => {
+        setLoading(true);
         try {
-            // Ensure admin user exists before fetching all data
             await ensureAdminUser();
 
             const [
@@ -41,14 +41,14 @@ const DataProvider = ({ children }) => {
                 enquiriesData, employeesData, salariesData, examsData,
                 instituteDetailsData
             ] = await db.transaction('r', db.tables, () => Promise.all([
-                db.students.toArray(),
-                db.courses.toArray(),
-                db.fees.toArray(),
-                db.results.toArray(),
-                db.enquiries.toArray(),
-                db.employees.toArray(),
-                db.salaries.toArray(),
-                db.exams.toArray(),
+                studentService.getAll(),
+                courseService.getAll(),
+                feeService.getAll(),
+                examService.getAllResults(),
+                enquiryService.getAll(),
+                employeeService.getAll(),
+                salaryService.getAll(), // Use the salary service
+                examService.getAllExams(),
                 db.instituteDetails.get(1)
             ]));
 
@@ -62,7 +62,7 @@ const DataProvider = ({ children }) => {
             setExams(examsData);
             setInstituteDetails(instituteDetailsData || {});
         } catch (error) {
-            console.error("Failed to fetch data from Dexie:", error);
+            console.error("Failed to fetch data:", error);
         } finally {
             setLoading(false);
         }
@@ -79,13 +79,7 @@ const DataProvider = ({ children }) => {
         return db.transaction('rw', db.counters, async () => {
             let counter = await db.counters.get('counters');
             if (!counter) {
-                // If counters object doesn't exist, create it
-                await db.counters.add({
-                    id: 'counters',
-                    nextStudentId: 1001,
-                    nextEmployeeId: 101,
-                    nextExamId: 1
-                });
+                await db.counters.add({ id: 'counters', nextStudentId: 1001, nextEmployeeId: 101, nextExamId: 1 });
                 counter = await db.counters.get('counters');
             }
             const nextId = counter[counterName];
@@ -94,41 +88,50 @@ const DataProvider = ({ children }) => {
         });
     };
 
-    // Generic CRUD functions
-    const addItem = async (tableName, item) => {
-        await db[tableName].add(item);
-        await fetchData();
-    };
+    // --- Service-based Functions ---
+    const addStudent = async (student) => { await studentService.add(student); await fetchData(); };
+    const updateStudent = async (student) => { await studentService.update(student); await fetchData(); };
+    const deleteStudent = async (id) => { await studentService.delete(id); await fetchData(); };
 
-    const updateItem = async (tableName, item) => {
-        await db[tableName].put(item);
-        await fetchData();
-    };
+    const addCourse = async (course) => { await courseService.add(course); await fetchData(); };
+    const updateCourse = async (course) => { await courseService.update(course); await fetchData(); };
+    const deleteCourse = async (id) => { await courseService.delete(id); await fetchData(); };
 
-    const deleteItem = async (tableName, id) => {
-        await db[tableName].delete(id);
-        await fetchData();
-    };
+    const addEmployee = async (employee) => { await employeeService.add(employee); await fetchData(); };
+    const updateEmployee = async (employee) => { await employeeService.update(employee); await fetchData(); };
+    const deleteEmployee = async (id) => { await employeeService.delete(id); await fetchData(); };
+
+    const addFee = async (fee) => { await feeService.add(fee); await fetchData(); };
+    const updateFee = async (fee) => { await feeService.update(fee); await fetchData(); };
+    const deleteFee = async (id) => { await feeService.delete(id); await fetchData(); };
+
+    const addExam = async (exam) => { await examService.addExam(exam); await fetchData(); };
+    const addResult = async (result) => { await examService.addResult(result); await fetchData(); };
+    const deleteExamAndResults = async (examId) => { await examService.deleteExamAndResults(examId); await fetchData(); };
+
+    const addEnquiry = async (enquiry) => { await enquiryService.add(enquiry); await fetchData(); };
+    const updateEnquiry = async (enquiry) => { await enquiryService.update(enquiry); await fetchData(); };
+    const deleteEnquiry = async (id) => { await enquiryService.delete(id); await fetchData(); };
+
+    const addSalary = async (salary) => { await salaryService.add(salary); await fetchData(); };
+    const deleteSalary = async (id) => { await salaryService.delete(id); await fetchData(); };
 
     const value = {
         students, courses, fees, results, enquiries, employees, salaries, exams,
         instituteDetails, loading,
         getNextId,
-        addItem,
-        updateItem,
-        deleteItem,
+        // Service-based functions
+        addStudent, updateStudent, deleteStudent,
+        addCourse, updateCourse, deleteCourse,
+        addEmployee, updateEmployee, deleteEmployee,
+        addFee, updateFee, deleteFee,
+        addExam, addResult, deleteExamAndResults,
+        addEnquiry, updateEnquiry, deleteEnquiry,
+        addSalary, deleteSalary,
         setInstituteDetails: async (details) => {
             await db.instituteDetails.put({ id: 1, ...details });
             await fetchData();
         },
-        deleteExamAndResults: async (examId) => {
-            await db.transaction('rw', db.exams, db.results, async () => {
-                await db.exams.delete(examId);
-                const resultsToDelete = await db.results.where({ examId: parseInt(examId, 10) }).primaryKeys();
-                await db.results.bulkDelete(resultsToDelete);
-            });
-            await fetchData();
-        }
     };
 
     return (

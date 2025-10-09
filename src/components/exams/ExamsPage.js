@@ -1,74 +1,41 @@
 const ExamsPage = ({ showMessage }) => {
     const { useState, useEffect } = React;
-    const { students, exams, results, getNextId, addItem, deleteExamAndResults, loading } = useData();
+    const { students, exams, results, getNextId, addExam, addResult, deleteExamAndResults, loading } = useData();
 
     const [view, setView] = useState('cards'); // 'cards', 'createExam', 'allExams'
-    const [examFormData, setExamFormData] = useState({
-        subjectName: '', topic: '', duration: '', date: '', time: '', location: ''
-    });
-    const [resultFormData, setResultFormData] = useState({ studentId: '', examId: '', score: '' });
+    const [editingExam, setEditingExam] = useState(null);
     const [nextExamId, setNextExamId] = useState(null);
 
     // Fetch the next exam ID when the component mounts
     useEffect(() => {
         const fetchNextId = async () => {
-            const id = await getNextId('nextExamId');
-            setNextExamId(id);
+            if (!loading) {
+                const id = await getNextId('nextExamId');
+                setNextExamId(id);
+            }
         };
         fetchNextId();
-    }, []);
-
-    const resetExamFormData = () => {
-        setExamFormData({
-            subjectName: '', topic: '', duration: '', date: '', time: '', location: ''
-        });
-    };
+    }, [loading]);
 
     // --- Handlers ---
-    const handleExamSubmit = async (e) => {
-        e.preventDefault();
-        try {
-            examSchema.parse(examFormData);
-        } catch (error) {
-            if (error instanceof z.ZodError) {
-                showMessage(error.errors[0].message);
-            }
-            return;
-        }
-
-        const newExam = { ...examFormData, id: nextExamId };
-        await addItem('exams', newExam);
+    const handleExamSubmit = async (data) => {
+        const newExam = { ...data, id: nextExamId };
+        await addExam(newExam);
         const newNextId = await getNextId('nextExamId');
         setNextExamId(newNextId);
         showMessage('Exam created successfully!');
-        resetExamFormData();
         setView('allExams');
     };
 
-    const handleResultSubmit = async (e) => {
-        e.preventDefault();
-
-        const dataToValidate = {
-            ...resultFormData,
-            examId: parseInt(resultFormData.examId, 10) || 0,
-        };
-
-        try {
-            resultSchema.parse(dataToValidate);
-        } catch (error) {
-            if (error instanceof z.ZodError) {
-                showMessage(error.errors[0].message);
-            }
-            return;
-        }
-
-        await addItem('results', dataToValidate);
+    const handleResultSubmit = async (data) => {
+        await addResult(data);
         showMessage('Result added successfully!');
-        setResultFormData({ studentId: '', examId: '', score: '' });
     };
 
     const handleEditExam = (exam) => {
         showMessage('Edit exam functionality coming soon!');
+        // setEditingExam(exam);
+        // setView('createExam');
     };
 
     const handleDeleteExam = async (id) => {
@@ -76,6 +43,11 @@ const ExamsPage = ({ showMessage }) => {
             await deleteExamAndResults(id);
             showMessage('Exam and its results deleted successfully!');
         }
+    };
+
+    const handleCancelForm = () => {
+        setEditingExam(null);
+        setView('cards');
     };
 
     // --- Render Logic ---
@@ -88,10 +60,9 @@ const ExamsPage = ({ showMessage }) => {
             case 'createExam':
                 return (
                     <ExamForm
-                        formData={examFormData}
-                        setFormData={setExamFormData}
-                        handleSubmit={handleExamSubmit}
-                        setView={setView}
+                        onSubmit={handleExamSubmit}
+                        onCancel={handleCancelForm}
+                        editingExam={editingExam}
                     />
                 );
             case 'allExams':
@@ -106,9 +77,7 @@ const ExamsPage = ({ showMessage }) => {
                             handleDeleteExam={handleDeleteExam}
                         />
                         <ResultForm
-                            resultFormData={resultFormData}
-                            handleResultChange={(e) => setResultFormData(prev => ({ ...prev, [e.target.name]: e.target.value }))}
-                            handleResultSubmit={handleResultSubmit}
+                            onSubmit={handleResultSubmit}
                             exams={exams}
                             students={students}
                         />
@@ -124,7 +93,7 @@ const ExamsPage = ({ showMessage }) => {
                     <PageContainer title="Exam & Results Management">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div
-                                onClick={() => { resetExamFormData(); setView('createExam'); }}
+                                onClick={() => { setEditingExam(null); setView('createExam'); }}
                                 className="bg-green-100 p-6 rounded-lg shadow-md hover:bg-green-200 transition-colors cursor-pointer flex flex-col items-center justify-center text-center"
                             >
                                 <p className="text-4xl font-bold text-green-600 mb-2">New</p>

@@ -1,112 +1,70 @@
 const StudentsPage = ({ showMessage }) => {
     const { useState, useEffect } = React;
-    const { students, courses, getNextId, addItem, updateItem, deleteItem, loading } = useData();
+    const { students, courses, getNextId, addStudent, updateStudent, deleteStudent, loading } = useData();
 
     const [view, setView] = useState('cards'); // 'cards', 'form', 'enrolled'
-    const [formData, setFormData] = useState({
-        firstName: '', lastName: '', course: '', phone: '+91', birthdate: '', age: '',
-        email: '', qualification: '', degreeName: '', casteCategory: '', state: '',
-        pincode: '', dateOfRegistration: new Date().toISOString().slice(0, 10),
-        documentsSubmitted: '', status: 'Active', photoUrl: '', fatherFullName: '',
-        motherFullName: '', emergencyContactName: '', emergencyContactPhone: '', bloodGroup: ''
-    });
-    const [editingId, setEditingId] = useState(null);
+    const [editingStudent, setEditingStudent] = useState(null);
     const [selectedStudent, setSelectedStudent] = useState(null);
     const [showPreview, setShowPreview] = useState(false);
+    const [previewData, setPreviewData] = useState(null);
     const [nextStudentId, setNextStudentId] = useState(null);
 
     // Fetch the next student ID when the component mounts
     useEffect(() => {
         const fetchNextId = async () => {
-            const id = await getNextId('nextStudentId');
-            setNextStudentId(id);
+            if (!loading) {
+                const id = await getNextId('nextStudentId');
+                setNextStudentId(id);
+            }
         };
         fetchNextId();
-    }, []);
+    }, [loading]);
 
-    // Calculate age automatically when birthdate changes
-    useEffect(() => {
-        if (formData.birthdate) {
-            const today = new Date();
-            const birthDate = new Date(formData.birthdate);
-            let age = today.getFullYear() - birthDate.getFullYear();
-            const m = today.getMonth() - birthDate.getMonth();
-            if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-                age--;
-            }
-            setFormData(prev => ({ ...prev, age: age }));
-        }
-    }, [formData.birthdate]);
-
-    const resetFormData = () => {
-        setFormData({
-            firstName: '', lastName: '', course: '', phone: '+91', birthdate: '', age: '',
-            email: '', qualification: '', degreeName: '', casteCategory: '', state: '',
-            pincode: '', dateOfRegistration: new Date().toISOString().slice(0, 10),
-            documentsSubmitted: '', status: 'Active', photoUrl: '', fatherFullName: '',
-            motherFullName: '', emergencyContactName: '', emergencyContactPhone: '', bloodGroup: ''
-        });
-        setEditingId(null);
-    };
-
-    // --- Handlers ---
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        try {
-            studentSchema.parse(formData);
-        } catch (error) {
-            if (error instanceof z.ZodError) {
-                showMessage(error.errors[0].message);
-            }
-            return;
-        }
-
-        if (editingId) {
-            await updateItem('students', { ...formData, id: editingId });
+    const handleFormSubmit = async (data) => {
+        if (editingStudent) {
+            await updateStudent({ ...data, id: editingStudent.id });
             showMessage('Student updated successfully!');
-            setView('enrolled');
-            resetFormData();
+            setEditingStudent(null);
         } else {
+            setPreviewData(data);
             setShowPreview(true);
         }
+        setView('enrolled');
     };
 
     const handleConfirmSave = async () => {
-        // Re-validate just in case
-        try {
-            studentSchema.parse(formData);
-        } catch (error) {
-            if (error instanceof z.ZodError) {
-                showMessage(error.errors[0].message);
-            }
-            return;
-        }
+        if (!previewData) return;
 
-        const newStudent = { ...formData, studentId: nextStudentId };
-        await addItem('students', newStudent);
+        const newStudent = { ...previewData, studentId: nextStudentId };
+        await addStudent(newStudent);
         showMessage('Student added successfully!');
+
         const newNextId = await getNextId('nextStudentId');
         setNextStudentId(newNextId);
+
         setShowPreview(false);
-        setView('enrolled');
-        resetFormData();
+        setPreviewData(null);
     };
 
     const handleEdit = (student) => {
-        setFormData({ ...student });
-        setEditingId(student.id);
+        setEditingStudent(student);
         setView('form');
     };
 
     const handleDelete = async (id) => {
         if (window.confirm('Are you sure you want to delete this student?')) {
-            await deleteItem('students', id);
+            await deleteStudent(id);
             showMessage('Student deleted successfully!');
         }
     };
 
     const handleViewDetails = (student) => {
         setSelectedStudent(student);
+    };
+
+    const handleCancelForm = () => {
+        setEditingStudent(null);
+        setView('cards');
     };
 
     // --- Render Logic ---
@@ -119,12 +77,9 @@ const StudentsPage = ({ showMessage }) => {
             case 'form':
                 return (
                     <StudentForm
-                        formData={formData}
-                        setFormData={setFormData}
-                        handleSubmit={handleSubmit}
-                        setView={setView}
-                        setEditingId={setEditingId}
-                        editingId={editingId}
+                        onSubmit={handleFormSubmit}
+                        onCancel={handleCancelForm}
+                        editingStudent={editingStudent}
                         courses={courses}
                     />
                 );
@@ -144,7 +99,7 @@ const StudentsPage = ({ showMessage }) => {
                     <PageContainer title="Student Management">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div
-                                onClick={() => { resetFormData(); setView('form'); }}
+                                onClick={() => { setEditingStudent(null); setView('form'); }}
                                 className="bg-green-100 p-6 rounded-lg shadow-md hover:bg-green-200 transition-colors cursor-pointer flex flex-col items-center justify-center text-center"
                             >
                                 <p className="text-4xl font-bold text-green-600 mb-2">New</p>
@@ -174,7 +129,7 @@ const StudentsPage = ({ showMessage }) => {
             )}
             {showPreview && (
                 <StudentPreviewModal
-                    formData={formData}
+                    formData={previewData}
                     nextStudentId={nextStudentId}
                     onConfirm={handleConfirmSave}
                     onCancel={() => setShowPreview(false)}

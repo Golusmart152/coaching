@@ -1,60 +1,37 @@
 const EnquiriesPage = ({ showMessage }) => {
     const { useState } = React;
-    const { courses, enquiries, addItem, updateItem, deleteItem, loading } = useData();
+    const { courses, enquiries, addEnquiry, updateEnquiry, deleteEnquiry, loading } = useData();
     const { addNotification } = useNotifications();
 
     const [view, setView] = useState('cards'); // 'cards', 'form', 'list'
-    const [formData, setFormData] = useState({
-        name: '', address: '', phone: '+91', courseEnquired: '',
-        expectedJoiningDate: '', initialComments: '', status: 'New', reasonLost: '', followUps: []
-    });
-    const [editingId, setEditingId] = useState(null);
+    const [editingEnquiry, setEditingEnquiry] = useState(null);
     const [followUpData, setFollowUpData] = useState({ date: new Date().toISOString().slice(0, 10), remark: '' });
     const [showFollowUpModal, setShowFollowUpModal] = useState(false);
     const [selectedEnquiry, setSelectedEnquiry] = useState(null);
     const [showEnquiryModal, setShowEnquiryModal] = useState(false);
 
-    const resetFormData = () => {
-        setFormData({
-            name: '', address: '', phone: '+91', courseEnquired: '',
-            expectedJoiningDate: '', initialComments: '', status: 'New', reasonLost: '', followUps: []
-        });
-        setEditingId(null);
-    };
-
     // --- Handlers ---
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        try {
-            enquirySchema.parse(formData);
-        } catch (error) {
-            if (error instanceof z.ZodError) {
-                showMessage(error.errors[0].message);
-            }
-            return;
-        }
-
-        if (editingId) {
-            await updateItem('enquiries', { ...formData, id: editingId });
+    const handleFormSubmit = async (data) => {
+        if (editingEnquiry) {
+            await updateEnquiry({ ...editingEnquiry, ...data });
             showMessage('Enquiry updated successfully!');
         } else {
-            await addItem('enquiries', formData);
+            await addEnquiry({ ...data, followUps: [] });
             showMessage('Enquiry added successfully!');
-            addNotification(`New enquiry from ${formData.name} for ${formData.courseEnquired}.`);
+            addNotification(`New enquiry from ${data.name} for ${data.courseEnquired}.`);
         }
-        resetFormData();
+        setEditingEnquiry(null);
         setView('list');
     };
 
     const handleEdit = (enquiry) => {
-        setFormData(enquiry);
-        setEditingId(enquiry.id);
+        setEditingEnquiry(enquiry);
         setView('form');
     };
 
     const handleDelete = async (id) => {
         if (window.confirm('Are you sure you want to delete this enquiry?')) {
-            await deleteItem('enquiries', id);
+            await deleteEnquiry(id);
             showMessage('Enquiry deleted successfully!');
         }
     };
@@ -74,7 +51,7 @@ const EnquiriesPage = ({ showMessage }) => {
         const enquiryToUpdate = enquiries.find(enq => enq.id === selectedEnquiry.id);
         const updatedFollowUps = [...enquiryToUpdate.followUps, followUpData];
 
-        await updateItem('enquiries', { ...enquiryToUpdate, followUps: updatedFollowUps });
+        await updateEnquiry({ ...enquiryToUpdate, followUps: updatedFollowUps });
 
         showMessage('Follow-up added successfully!');
         setShowFollowUpModal(false);
@@ -84,6 +61,11 @@ const EnquiriesPage = ({ showMessage }) => {
     const handleViewEnquiry = (enquiry) => {
         setSelectedEnquiry(enquiry);
         setShowEnquiryModal(true);
+    };
+
+    const handleCancelForm = () => {
+        setEditingEnquiry(null);
+        setView('cards');
     };
 
     // --- Render Logic ---
@@ -96,11 +78,9 @@ const EnquiriesPage = ({ showMessage }) => {
             case 'form':
                 return (
                     <EnquiryForm
-                        formData={formData}
-                        setFormData={setFormData}
-                        handleSubmit={handleSubmit}
-                        setView={setView}
-                        editingId={editingId}
+                        onSubmit={handleFormSubmit}
+                        onCancel={handleCancelForm}
+                        editingEnquiry={editingEnquiry}
                         courses={courses}
                     />
                 );
@@ -121,7 +101,7 @@ const EnquiriesPage = ({ showMessage }) => {
                     <PageContainer title="Enquiry Management">
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div
-                                onClick={() => { resetFormData(); setView('form'); }}
+                                onClick={() => { setEditingEnquiry(null); setView('form'); }}
                                 className="bg-green-100 p-6 rounded-lg shadow-md hover:bg-green-200 transition-colors cursor-pointer flex flex-col items-center justify-center text-center"
                             >
                                 <p className="text-4xl font-bold text-green-600 mb-2">New</p>

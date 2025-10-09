@@ -1,74 +1,54 @@
 const EmployeePage = ({ showMessage, PageContainer, Table }) => {
     const { useState } = React;
-    const { employees, getNextId, addItem, updateItem, deleteItem, loading } = useData();
+    const { employees, getNextId, addEmployee, updateEmployee, deleteEmployee, loading } = useData();
 
     const [view, setView] = useState('cards'); // 'cards', 'form', 'master', 'salary'
-    const [formData, setFormData] = useState({
-        firstName: '', lastName: '', email: '', phone: '', address: '', role: '',
-        salary: '', password: '', bankDetails: { accountHolderName: '', bankName: '', accountNumber: '', ifscCode: '' }
-    });
-    const [editingId, setEditingId] = useState(null);
+    const [editingEmployee, setEditingEmployee] = useState(null);
     const [selectedEmployee, setSelectedEmployee] = useState(null);
 
-    const resetFormData = () => {
-        setFormData({
-            firstName: '', lastName: '', email: '', phone: '', address: '', role: '',
-            salary: '', password: '', bankDetails: { accountHolderName: '', bankName: '', accountNumber: '', ifscCode: '' }
-        });
-        setEditingId(null);
-    };
-
     // --- Handlers ---
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-
-        const schema = editingId ? employeeSchema.partial() : employeeSchema;
-        if (!editingId) {
-            schema.required({ password: true });
-        }
-
-        try {
-            schema.parse(formData);
-        } catch (error) {
-            if (error instanceof z.ZodError) {
-                showMessage(error.errors[0].message);
+    const handleFormSubmit = async (data) => {
+        if (editingEmployee) {
+            const employeeToUpdate = { ...data, id: editingEmployee.id };
+            if (!data.password) {
+                // Keep old password if new one is not provided
+                employeeToUpdate.password = editingEmployee.password;
             }
-            return;
-        }
-
-        if (editingId) {
-            const employeeToUpdate = { ...formData, id: editingId };
-            if (!formData.password) {
-                const originalEmployee = employees.find(emp => emp.id === editingId);
-                employeeToUpdate.password = originalEmployee.password;
-            }
-            await updateItem('employees', employeeToUpdate);
+            await updateEmployee(employeeToUpdate);
             showMessage('Employee updated successfully!');
         } else {
+            if (!data.password) {
+                showMessage('Password is required for new employees.');
+                return;
+            }
             const nextId = await getNextId('nextEmployeeId');
-            const newEmployee = { ...formData, employeeId: nextId };
-            await addItem('employees', newEmployee);
+            const newEmployee = { ...data, employeeId: nextId };
+            await addEmployee(newEmployee);
             showMessage('Employee added successfully!');
         }
-        resetFormData();
+        setEditingEmployee(null);
         setView('master');
     };
 
     const handleEdit = (employee) => {
-        setFormData({ ...employee, password: '' });
-        setEditingId(employee.id);
+        setEditingEmployee(employee);
         setView('form');
     };
 
     const handleDelete = async (id) => {
         if (window.confirm('Are you sure you want to delete this employee?')) {
-            await deleteItem('employees', id);
+            await deleteEmployee(id);
             showMessage('Employee deleted successfully!');
         }
     };
 
     const handleViewDetails = (employee) => {
         setSelectedEmployee(employee);
+    };
+
+    const handleCancelForm = () => {
+        setEditingEmployee(null);
+        setView('cards');
     };
 
     // --- Render Logic ---
@@ -81,12 +61,9 @@ const EmployeePage = ({ showMessage, PageContainer, Table }) => {
             case 'form':
                 return (
                     <EmployeeForm
-                        formData={formData}
-                        setFormData={setFormData}
-                        handleSubmit={handleSubmit}
-                        setView={setView}
-                        setEditingId={setEditingId}
-                        editingId={editingId}
+                        onSubmit={handleFormSubmit}
+                        onCancel={handleCancelForm}
+                        editingEmployee={editingEmployee}
                     />
                 );
             case 'master':
@@ -113,7 +90,7 @@ const EmployeePage = ({ showMessage, PageContainer, Table }) => {
                     <PageContainer title="Employee Management">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div
-                                onClick={() => { resetFormData(); setView('form'); }}
+                                onClick={() => { setEditingEmployee(null); setView('form'); }}
                                 className="bg-green-100 p-6 rounded-lg shadow-md hover:bg-green-200 transition-colors cursor-pointer flex flex-col items-center justify-center text-center"
                             >
                                 <p className="text-4xl font-bold text-green-600 mb-2">New</p>

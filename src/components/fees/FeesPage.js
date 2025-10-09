@@ -1,65 +1,39 @@
 const FeesPage = ({ showMessage }) => {
     const { useState } = React;
-    const { students, courses, fees, instituteDetails, addItem, updateItem, deleteItem, loading } = useData();
+    const { students, courses, fees, instituteDetails, addFee, updateFee, deleteFee, loading } = useData();
 
     const [view, setView] = useState('cards'); // 'cards', 'form', 'list', 'ledger'
-    const [formData, setFormData] = useState({
-        studentId: '', amountPaid: '', date: new Date().toISOString().slice(0, 10),
-        paymentType: 'Full', totalFee: '', dueAmount: '', paymentMethod: ''
-    });
-    const [editingId, setEditingId] = useState(null);
+    const [editingFee, setEditingFee] = useState(null);
     const [selectedStudentId, setSelectedStudentId] = useState('');
 
-    const resetFormData = () => {
-        setFormData({
-            studentId: '', amountPaid: '', date: new Date().toISOString().slice(0, 10),
-            paymentType: 'Full', totalFee: '', dueAmount: '', paymentMethod: ''
-        });
-        setEditingId(null);
-    };
-
     // --- Handlers ---
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-
-        const dataToValidate = {
-            ...formData,
-            amountPaid: parseFloat(formData.amountPaid) || 0,
-            totalFee: parseFloat(formData.totalFee) || 0,
-            dueAmount: parseFloat(formData.dueAmount) || 0,
-        };
-
-        try {
-            feeSchema.parse(dataToValidate);
-        } catch (error) {
-            if (error instanceof z.ZodError) {
-                showMessage(error.errors[0].message);
-            }
-            return;
-        }
-
-        if (editingId) {
-            await updateItem('fees', { ...dataToValidate, id: editingId });
+    const handleFormSubmit = async (data) => {
+        if (editingFee) {
+            await updateFee({ ...data, id: editingFee.id });
             showMessage('Fee record updated successfully!');
         } else {
-            await addItem('fees', dataToValidate);
+            await addFee(data);
             showMessage('Fee record added successfully!');
         }
-        resetFormData();
+        setEditingFee(null);
         setView('list');
     };
 
     const handleEdit = (fee) => {
-        setFormData({ ...fee });
-        setEditingId(fee.id);
+        setEditingFee(fee);
         setView('form');
     };
 
     const handleDelete = async (id) => {
         if (window.confirm('Are you sure you want to delete this fee record?')) {
-            await deleteItem('fees', id);
+            await deleteFee(id);
             showMessage('Fee record deleted successfully!');
         }
+    };
+
+    const handleCancelForm = () => {
+        setEditingFee(null);
+        setView('cards');
     };
 
     // --- Render Logic ---
@@ -72,11 +46,9 @@ const FeesPage = ({ showMessage }) => {
             case 'form':
                 return (
                     <FeeForm
-                        formData={formData}
-                        setFormData={setFormData}
-                        handleSubmit={handleSubmit}
-                        setView={setView}
-                        editingId={editingId}
+                        onSubmit={handleFormSubmit}
+                        onCancel={handleCancelForm}
+                        editingFee={editingFee}
                         students={students}
                         courses={courses}
                         fees={fees}
@@ -129,7 +101,7 @@ const FeesPage = ({ showMessage }) => {
                     <PageContainer title="Fee Management">
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             <div
-                                onClick={() => { resetFormData(); setView('form'); }}
+                                onClick={() => { setEditingFee(null); setView('form'); }}
                                 className="bg-green-100 p-6 rounded-lg shadow-md hover:bg-green-200 transition-colors cursor-pointer flex flex-col items-center justify-center text-center"
                             >
                                 <p className="text-4xl font-bold text-green-600 mb-2">New</p>
