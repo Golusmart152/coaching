@@ -1,6 +1,6 @@
 const EmployeePage = ({ showMessage, PageContainer, Table }) => {
     const { useState } = React;
-    const { employees, setEmployees, salaries, setSalaries, instituteDetails } = useData();
+    const { employees, getNextId, addItem, updateItem, deleteItem, loading } = useData();
 
     const [view, setView] = useState('cards'); // 'cards', 'form', 'master', 'salary'
     const [formData, setFormData] = useState({
@@ -21,31 +21,33 @@ const EmployeePage = ({ showMessage, PageContainer, Table }) => {
     // --- Handlers ---
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!formData.firstName || !formData.lastName || !formData.email || !formData.role) {
-            showMessage('Please fill in all required fields.');
+
+        const schema = editingId ? employeeSchema.partial() : employeeSchema;
+        if (!editingId) {
+            schema.required({ password: true });
+        }
+
+        try {
+            schema.parse(formData);
+        } catch (error) {
+            if (error instanceof z.ZodError) {
+                showMessage(error.errors[0].message);
+            }
             return;
         }
 
         if (editingId) {
-            const updatedEmployees = employees.map(emp => {
-                if (emp.id === editingId) {
-                    const updatedEmployee = { ...emp, ...formData };
-                    if (!formData.password) {
-                        updatedEmployee.password = emp.password;
-                    }
-                    return updatedEmployee;
-                }
-                return emp;
-            });
-            setEmployees(updatedEmployees);
+            const employeeToUpdate = { ...formData, id: editingId };
+            if (!formData.password) {
+                const originalEmployee = employees.find(emp => emp.id === editingId);
+                employeeToUpdate.password = originalEmployee.password;
+            }
+            await updateItem('employees', employeeToUpdate);
             showMessage('Employee updated successfully!');
         } else {
-            if (!formData.password) {
-                showMessage('Password is required for new employees.');
-                return;
-            }
-            const newEmployee = { id: crypto.randomUUID(), ...formData };
-            setEmployees([...employees, newEmployee]);
+            const nextId = await getNextId('nextEmployeeId');
+            const newEmployee = { ...formData, employeeId: nextId };
+            await addItem('employees', newEmployee);
             showMessage('Employee added successfully!');
         }
         resetFormData();
@@ -58,9 +60,9 @@ const EmployeePage = ({ showMessage, PageContainer, Table }) => {
         setView('form');
     };
 
-    const handleDelete = (id) => {
+    const handleDelete = async (id) => {
         if (window.confirm('Are you sure you want to delete this employee?')) {
-            setEmployees(employees.filter(emp => emp.id !== id));
+            await deleteItem('employees', id);
             showMessage('Employee deleted successfully!');
         }
     };
@@ -70,6 +72,10 @@ const EmployeePage = ({ showMessage, PageContainer, Table }) => {
     };
 
     // --- Render Logic ---
+    if (loading) {
+        return <PageContainer title="Loading Employees..."><p>Loading data from the database...</p></PageContainer>;
+    }
+
     const renderContent = () => {
         switch (view) {
             case 'form':
@@ -96,10 +102,6 @@ const EmployeePage = ({ showMessage, PageContainer, Table }) => {
             case 'salary':
                 return (
                     <SalaryPage
-                        employees={employees}
-                        salaries={salaries}
-                        setSalaries={setSalaries}
-                        instituteDetails={instituteDetails}
                         showMessage={showMessage}
                         PageContainer={PageContainer}
                         Table={Table}

@@ -1,6 +1,6 @@
 const StudentsPage = ({ showMessage }) => {
     const { useState, useEffect } = React;
-    const { students, setStudents, courses, nextStudentId, setNextStudentId } = useData();
+    const { students, courses, getNextId, addItem, updateItem, deleteItem, loading } = useData();
 
     const [view, setView] = useState('cards'); // 'cards', 'form', 'enrolled'
     const [formData, setFormData] = useState({
@@ -13,6 +13,16 @@ const StudentsPage = ({ showMessage }) => {
     const [editingId, setEditingId] = useState(null);
     const [selectedStudent, setSelectedStudent] = useState(null);
     const [showPreview, setShowPreview] = useState(false);
+    const [nextStudentId, setNextStudentId] = useState(null);
+
+    // Fetch the next student ID when the component mounts
+    useEffect(() => {
+        const fetchNextId = async () => {
+            const id = await getNextId('nextStudentId');
+            setNextStudentId(id);
+        };
+        fetchNextId();
+    }, []);
 
     // Calculate age automatically when birthdate changes
     useEffect(() => {
@@ -24,7 +34,7 @@ const StudentsPage = ({ showMessage }) => {
             if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
                 age--;
             }
-            setFormData(prev => ({ ...prev, age }));
+            setFormData(prev => ({ ...prev, age: age }));
         }
     }, [formData.birthdate]);
 
@@ -42,22 +52,17 @@ const StudentsPage = ({ showMessage }) => {
     // --- Handlers ---
     const handleSubmit = async (e) => {
         e.preventDefault();
-
-        // Validation can remain here as it's business logic for this page
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        const phoneRegex = /^\+91\d{10}$/;
-        if (!formData.firstName.trim() || !formData.lastName.trim() || !formData.course || !formData.phone || !formData.email || !formData.birthdate || !formData.state) {
-            showMessage('Please fill in all required fields.'); return;
-        }
-        if (!emailRegex.test(formData.email)) {
-            showMessage('Please enter a valid email address.'); return;
-        }
-        if (!phoneRegex.test(formData.phone)) {
-            showMessage('Please enter a valid 10-digit phone number with +91 country code.'); return;
+        try {
+            studentSchema.parse(formData);
+        } catch (error) {
+            if (error instanceof z.ZodError) {
+                showMessage(error.errors[0].message);
+            }
+            return;
         }
 
         if (editingId) {
-            setStudents(students.map(s => s.id === editingId ? { ...s, ...formData } : s));
+            await updateItem('students', { ...formData, id: editingId });
             showMessage('Student updated successfully!');
             setView('enrolled');
             resetFormData();
@@ -66,11 +71,22 @@ const StudentsPage = ({ showMessage }) => {
         }
     };
 
-    const handleConfirmSave = () => {
-        const newStudent = { id: crypto.randomUUID(), studentId: nextStudentId, ...formData };
-        setStudents([...students, newStudent]);
-        setNextStudentId(prev => prev + 1);
+    const handleConfirmSave = async () => {
+        // Re-validate just in case
+        try {
+            studentSchema.parse(formData);
+        } catch (error) {
+            if (error instanceof z.ZodError) {
+                showMessage(error.errors[0].message);
+            }
+            return;
+        }
+
+        const newStudent = { ...formData, studentId: nextStudentId };
+        await addItem('students', newStudent);
         showMessage('Student added successfully!');
+        const newNextId = await getNextId('nextStudentId');
+        setNextStudentId(newNextId);
         setShowPreview(false);
         setView('enrolled');
         resetFormData();
@@ -82,9 +98,9 @@ const StudentsPage = ({ showMessage }) => {
         setView('form');
     };
 
-    const handleDelete = (id) => {
+    const handleDelete = async (id) => {
         if (window.confirm('Are you sure you want to delete this student?')) {
-            setStudents(students.filter(s => s.id !== id));
+            await deleteItem('students', id);
             showMessage('Student deleted successfully!');
         }
     };
@@ -94,6 +110,10 @@ const StudentsPage = ({ showMessage }) => {
     };
 
     // --- Render Logic ---
+    if (loading) {
+        return <PageContainer title="Loading Students..."><p>Loading data from the database...</p></PageContainer>;
+    }
+
     const renderContent = () => {
         switch (view) {
             case 'form':

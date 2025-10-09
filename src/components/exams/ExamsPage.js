@@ -1,12 +1,22 @@
 const ExamsPage = ({ showMessage }) => {
-    const { useState } = React;
-    const { students, exams, setExams, results, setResults, nextExamId, setNextExamId } = useData();
+    const { useState, useEffect } = React;
+    const { students, exams, results, getNextId, addItem, deleteExamAndResults, loading } = useData();
 
     const [view, setView] = useState('cards'); // 'cards', 'createExam', 'allExams'
     const [examFormData, setExamFormData] = useState({
         subjectName: '', topic: '', duration: '', date: '', time: '', location: ''
     });
     const [resultFormData, setResultFormData] = useState({ studentId: '', examId: '', score: '' });
+    const [nextExamId, setNextExamId] = useState(null);
+
+    // Fetch the next exam ID when the component mounts
+    useEffect(() => {
+        const fetchNextId = async () => {
+            const id = await getNextId('nextExamId');
+            setNextExamId(id);
+        };
+        fetchNextId();
+    }, []);
 
     const resetExamFormData = () => {
         setExamFormData({
@@ -15,53 +25,64 @@ const ExamsPage = ({ showMessage }) => {
     };
 
     // --- Handlers ---
-    const handleExamSubmit = (e) => {
+    const handleExamSubmit = async (e) => {
         e.preventDefault();
-        if (!examFormData.subjectName || !examFormData.topic || !examFormData.duration || !examFormData.date || !examFormData.time || !examFormData.location) {
-            showMessage('Please fill in all exam details.');
+        try {
+            examSchema.parse(examFormData);
+        } catch (error) {
+            if (error instanceof z.ZodError) {
+                showMessage(error.errors[0].message);
+            }
             return;
         }
-        const newExam = { id: nextExamId, ...examFormData };
-        setExams([...exams, newExam]);
-        setNextExamId(prev => prev + 1);
+
+        const newExam = { ...examFormData, id: nextExamId };
+        await addItem('exams', newExam);
+        const newNextId = await getNextId('nextExamId');
+        setNextExamId(newNextId);
         showMessage('Exam created successfully!');
         resetExamFormData();
         setView('allExams');
     };
 
-    const handleResultSubmit = (e) => {
+    const handleResultSubmit = async (e) => {
         e.preventDefault();
-        if (!resultFormData.studentId || !resultFormData.examId || !resultFormData.score) {
-            showMessage('Please fill in all result details.');
+
+        const dataToValidate = {
+            ...resultFormData,
+            examId: parseInt(resultFormData.examId, 10) || 0,
+        };
+
+        try {
+            resultSchema.parse(dataToValidate);
+        } catch (error) {
+            if (error instanceof z.ZodError) {
+                showMessage(error.errors[0].message);
+            }
             return;
         }
-        const newResult = {
-            id: crypto.randomUUID(),
-            studentId: resultFormData.studentId,
-            examId: resultFormData.examId,
-            score: resultFormData.score
-        };
-        setResults([...results, newResult]);
+
+        await addItem('results', dataToValidate);
         showMessage('Result added successfully!');
         setResultFormData({ studentId: '', examId: '', score: '' });
     };
 
     const handleEditExam = (exam) => {
         showMessage('Edit exam functionality coming soon!');
-        // In a real implementation, you would likely set the form data and switch to the form view:
-        // setExamFormData(exam);
-        // setView('createExam');
     };
 
-    const handleDeleteExam = (id) => {
+    const handleDeleteExam = async (id) => {
         if (window.confirm('Are you sure you want to delete this exam and all its results?')) {
-            setExams(exams.filter(e => e.id !== id));
-            setResults(results.filter(r => r.examId !== id));
+            await deleteExamAndResults(id);
             showMessage('Exam and its results deleted successfully!');
         }
     };
 
     // --- Render Logic ---
+    if (loading) {
+        return <PageContainer title="Loading Exams..."><p>Loading data from the database...</p></PageContainer>;
+    }
+
     const renderContent = () => {
         switch (view) {
             case 'createExam':

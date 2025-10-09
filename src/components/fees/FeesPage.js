@@ -1,6 +1,6 @@
 const FeesPage = ({ showMessage }) => {
     const { useState } = React;
-    const { students, courses, fees, setFees, instituteDetails } = useData();
+    const { students, courses, fees, instituteDetails, addItem, updateItem, deleteItem, loading } = useData();
 
     const [view, setView] = useState('cards'); // 'cards', 'form', 'list', 'ledger'
     const [formData, setFormData] = useState({
@@ -21,20 +21,28 @@ const FeesPage = ({ showMessage }) => {
     // --- Handlers ---
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!formData.studentId || !formData.amountPaid || !formData.date) {
-            showMessage('Please fill in all required fields.');
+
+        const dataToValidate = {
+            ...formData,
+            amountPaid: parseFloat(formData.amountPaid) || 0,
+            totalFee: parseFloat(formData.totalFee) || 0,
+            dueAmount: parseFloat(formData.dueAmount) || 0,
+        };
+
+        try {
+            feeSchema.parse(dataToValidate);
+        } catch (error) {
+            if (error instanceof z.ZodError) {
+                showMessage(error.errors[0].message);
+            }
             return;
         }
+
         if (editingId) {
-            setFees(fees.map(f => f.id === editingId ? { ...f, ...formData } : f));
+            await updateItem('fees', { ...dataToValidate, id: editingId });
             showMessage('Fee record updated successfully!');
         } else {
-            const newFee = {
-                id: crypto.randomUUID(), ...formData,
-                amountPaid: parseFloat(formData.amountPaid),
-                dueAmount: parseFloat(formData.dueAmount)
-            };
-            setFees([...fees, newFee]);
+            await addItem('fees', dataToValidate);
             showMessage('Fee record added successfully!');
         }
         resetFormData();
@@ -47,14 +55,18 @@ const FeesPage = ({ showMessage }) => {
         setView('form');
     };
 
-    const handleDelete = (id) => {
+    const handleDelete = async (id) => {
         if (window.confirm('Are you sure you want to delete this fee record?')) {
-            setFees(fees.filter(f => f.id !== id));
+            await deleteItem('fees', id);
             showMessage('Fee record deleted successfully!');
         }
     };
 
     // --- Render Logic ---
+    if (loading) {
+        return <PageContainer title="Loading Fees..."><p>Loading data from the database...</p></PageContainer>;
+    }
+
     const renderContent = () => {
         switch (view) {
             case 'form':

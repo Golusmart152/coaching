@@ -1,6 +1,6 @@
 const CoursesPage = ({ showMessage }) => {
     const { useState } = React;
-    const { courses, setCourses } = useData();
+    const { courses, addItem, updateItem, deleteItem, loading } = useData();
 
     const [view, setView] = useState('cards'); // 'cards', 'form', 'list'
     const [formData, setFormData] = useState({
@@ -20,17 +20,29 @@ const CoursesPage = ({ showMessage }) => {
     // --- Handlers ---
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!formData.name || !formData.durationValue || !formData.durationUnit || !formData.totalFee || !formData.numberOfLectures || !formData.numberOfHours) {
-            showMessage('Please fill in all required fields.');
+        try {
+            courseSchema.parse(formData);
+        } catch (error) {
+            if (error instanceof z.ZodError) {
+                showMessage(error.errors[0].message);
+            }
             return;
         }
-        const newDuration = `${formData.durationValue} ${formData.durationUnit}`;
+
+        const courseData = {
+            name: formData.name,
+            description: formData.description,
+            duration: `${formData.durationValue} ${formData.durationUnit}`,
+            totalFee: formData.totalFee,
+            numberOfLectures: formData.numberOfLectures,
+            numberOfHours: formData.numberOfHours
+        };
+
         if (editingId) {
-            setCourses(courses.map(c => c.id === editingId ? { ...c, ...formData, duration: newDuration } : c));
+            await updateItem('courses', { ...courseData, id: editingId });
             showMessage('Course updated successfully!');
         } else {
-            const newCourse = { id: crypto.randomUUID(), ...formData, duration: newDuration };
-            setCourses([...courses, newCourse]);
+            await addItem('courses', courseData);
             showMessage('Course added successfully!');
         }
         resetFormData();
@@ -40,22 +52,30 @@ const CoursesPage = ({ showMessage }) => {
     const handleEdit = (course) => {
         const [durationValue, durationUnit] = course.duration.split(' ');
         setFormData({
-            name: course.name, description: course.description, durationValue,
-            durationUnit, totalFee: course.totalFee, numberOfLectures: course.numberOfLectures,
+            name: course.name,
+            description: course.description,
+            durationValue,
+            durationUnit,
+            totalFee: course.totalFee,
+            numberOfLectures: course.numberOfLectures,
             numberOfHours: course.numberOfHours
         });
         setEditingId(course.id);
         setView('form');
     };
 
-    const handleDelete = (id) => {
+    const handleDelete = async (id) => {
         if (window.confirm('Are you sure you want to delete this course?')) {
-            setCourses(courses.filter(c => c.id !== id));
+            await deleteItem('courses', id);
             showMessage('Course deleted successfully!');
         }
     };
 
     // --- Render Logic ---
+    if (loading) {
+        return <PageContainer title="Loading Courses..."><p>Loading data from the database...</p></PageContainer>;
+    }
+
     const renderContent = () => {
         switch (view) {
             case 'form':

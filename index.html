@@ -16,6 +16,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.14/jspdf.plugin.autotable.min.js"></script>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Dexie (for IndexedDB) and Zod (for validation) -->
+    <script src="https://unpkg.com/dexie@3.2.2/dist/dexie.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/zod/3.22.4/zod.umd.min.js"></script>
     <!-- Firebase -->
     <script type="module" src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js"></script>
     <script type="module" src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js"></script>
@@ -56,7 +59,16 @@
 
     <!-- The main React application code -->
     <script type="text/babel" src="src/constants/constants.js"></script>
+    <script type="text/babel" src="src/db/db.js"></script>
     <script type="text/babel" src="src/hooks/useLocalStorage.js"></script>
+    <script type="text/babel" src="src/validation/studentSchema.js"></script>
+    <script type="text/babel" src="src/validation/employeeSchema.js"></script>
+    <script type="text/babel" src="src/validation/courseSchema.js"></script>
+    <script type="text/babel" src="src/validation/feeSchema.js"></script>
+    <script type="text/babel" src="src/validation/examSchema.js"></script>
+    <script type="text/babel" src="src/validation/resultSchema.js"></script>
+    <script type="text/babel" src="src/validation/salarySchema.js"></script>
+    <script type="text/babel" src="src/validation/enquirySchema.js"></script>
     <script type="text/babel" src="src/contexts/AuthContext.js"></script>
     <script type="text/babel" src="src/contexts/NotificationContext.js"></script>
     <script type="text/babel" src="src/contexts/DataContext.js"></script>

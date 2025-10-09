@@ -1,12 +1,12 @@
 const EnquiriesPage = ({ showMessage }) => {
     const { useState } = React;
-    const { courses, enquiries, setEnquiries } = useData();
+    const { courses, enquiries, addItem, updateItem, deleteItem, loading } = useData();
     const { addNotification } = useNotifications();
 
     const [view, setView] = useState('cards'); // 'cards', 'form', 'list'
     const [formData, setFormData] = useState({
         name: '', address: '', phone: '+91', courseEnquired: '',
-        expectedJoiningDate: '', initialComments: '', status: 'New', reasonLost: ''
+        expectedJoiningDate: '', initialComments: '', status: 'New', reasonLost: '', followUps: []
     });
     const [editingId, setEditingId] = useState(null);
     const [followUpData, setFollowUpData] = useState({ date: new Date().toISOString().slice(0, 10), remark: '' });
@@ -17,24 +17,28 @@ const EnquiriesPage = ({ showMessage }) => {
     const resetFormData = () => {
         setFormData({
             name: '', address: '', phone: '+91', courseEnquired: '',
-            expectedJoiningDate: '', initialComments: '', status: 'New', reasonLost: ''
+            expectedJoiningDate: '', initialComments: '', status: 'New', reasonLost: '', followUps: []
         });
         setEditingId(null);
     };
 
     // --- Handlers ---
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!formData.name || !formData.phone || !formData.courseEnquired) {
-            showMessage('Please fill in all required fields.');
+        try {
+            enquirySchema.parse(formData);
+        } catch (error) {
+            if (error instanceof z.ZodError) {
+                showMessage(error.errors[0].message);
+            }
             return;
         }
+
         if (editingId) {
-            setEnquiries(enquiries.map(enq => enq.id === editingId ? { ...enq, ...formData } : enq));
+            await updateItem('enquiries', { ...formData, id: editingId });
             showMessage('Enquiry updated successfully!');
         } else {
-            const newEnquiry = { ...formData, id: crypto.randomUUID(), followUps: [] };
-            setEnquiries([...enquiries, newEnquiry]);
+            await addItem('enquiries', formData);
             showMessage('Enquiry added successfully!');
             addNotification(`New enquiry from ${formData.name} for ${formData.courseEnquired}.`);
         }
@@ -43,18 +47,14 @@ const EnquiriesPage = ({ showMessage }) => {
     };
 
     const handleEdit = (enquiry) => {
-        setFormData({
-            name: enquiry.name, address: enquiry.address, phone: enquiry.phone,
-            courseEnquired: enquiry.courseEnquired, expectedJoiningDate: enquiry.expectedJoiningDate,
-            initialComments: enquiry.initialComments, status: enquiry.status, reasonLost: enquiry.reasonLost
-        });
+        setFormData(enquiry);
         setEditingId(enquiry.id);
         setView('form');
     };
 
-    const handleDelete = (id) => {
+    const handleDelete = async (id) => {
         if (window.confirm('Are you sure you want to delete this enquiry?')) {
-            setEnquiries(enquiries.filter(e => e.id !== id));
+            await deleteItem('enquiries', id);
             showMessage('Enquiry deleted successfully!');
         }
     };
@@ -64,17 +64,18 @@ const EnquiriesPage = ({ showMessage }) => {
         setShowFollowUpModal(true);
     };
 
-    const handleAddFollowUp = (e) => {
+    const handleAddFollowUp = async (e) => {
         e.preventDefault();
         if (!followUpData.date || !followUpData.remark) {
             showMessage('Please add both a date and a remark for the follow-up.');
             return;
         }
-        setEnquiries(enquiries.map(enq =>
-            enq.id === selectedEnquiry.id
-                ? { ...enq, followUps: [...enq.followUps, { ...followUpData }] }
-                : enq
-        ));
+
+        const enquiryToUpdate = enquiries.find(enq => enq.id === selectedEnquiry.id);
+        const updatedFollowUps = [...enquiryToUpdate.followUps, followUpData];
+
+        await updateItem('enquiries', { ...enquiryToUpdate, followUps: updatedFollowUps });
+
         showMessage('Follow-up added successfully!');
         setShowFollowUpModal(false);
         setFollowUpData({ date: new Date().toISOString().slice(0, 10), remark: '' });
@@ -86,6 +87,10 @@ const EnquiriesPage = ({ showMessage }) => {
     };
 
     // --- Render Logic ---
+    if (loading) {
+        return <PageContainer title="Loading Enquiries..."><p>Loading data from the database...</p></PageContainer>;
+    }
+
     const renderContent = () => {
         switch (view) {
             case 'form':
